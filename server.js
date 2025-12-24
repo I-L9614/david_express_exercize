@@ -5,50 +5,78 @@ const app = express()
 const PORT = 3000
 app.use(express.json())
 
-app.get('/users', async(req,res) => {
-    let users = await fs.readFile('users.json','utf8')
+app.get('/users', async (req, res) => {
+    let users = await fs.readFile('users.json', 'utf8')
     users = JSON.parse(users)
     res.json(users)
 })
 
-app.get('/users/search', async(req,res) => {
-    let users = await fs.readFile('users.json','utf8')
+app.get('/users/search', async (req, res) => {
+    let users = await fs.readFile('users.json', 'utf8')
     users = JSON.parse(users)
-    const {city} = req.query
-    const user = users.filter(user => user.city===city)
+    const { city } = req.query
+    const user = users.filter(user => user.city === city)
     if (!user) {
-        return res.status(404).json({message:"User not found"})
+        return res.status(404).json({ message: "User not found" })
     }
     res.send(user)
 })
 
-app.get('/users/:id', async(req,res) => {
-    let users = await fs.readFile('users.json','utf8')
+app.get('/users/:id', async (req, res) => {
+    let users = await fs.readFile('users.json', 'utf8')
     users = JSON.parse(users)
-    const {id} = req.params
+    const { id } = req.params
     const intId = parseInt(id)
-    const user = users.find(user => user.id===intId)
+    const user = users.find(user => user.id === intId)
     if (!user) {
-        return res.status(404).json({message:"User not found"})
+        return res.status(404).json({ message: "User not found" })
     }
     res.send(user)
 })
 
-app.post('/users', async(req,res) => {
-    let users = await fs.readFile('users.json','utf8')
+app.post('/users', async (req, res) => {
+    let users = await fs.readFile('users.json', 'utf8')
     users = JSON.parse(users)
     const maxId = users.length > 0 ? Math.max(...users.map(u => u.id)) : 0
     const newUser = {
-        id:maxId + 1,
+        id: maxId + 1,
         ...req.body
     }
     users.push(newUser)
-    await fs.writeFile('users.json',JSON.stringify(users,null,2))
+    await fs.writeFile('users.json', JSON.stringify(users, null, 2))
     res.send(newUser)
 
 })
 
+app.put('/users/:id', async (req, res) => {
+    let users = await fs.readFile('users.json', 'utf8')
+    users = JSON.parse(users)
+    const {id} = req.params
+    const intId = parseInt(id)
+    const index = users.findIndex(u => u.id === intId)
+    if (index === -1) {
+        return res.status(404).json({ message: "User not found" })
+    }
+    users[index] = {id, ...req.body}
+    await fs.writeFile('users.json', JSON.stringify(users, null, 2))
+    res.send(users[index])
+})
+
+app.delete('/users/:id', async(req,res) => {
+    let users = await fs.readFile('users.json', 'utf8')
+    users = JSON.parse(users)
+    const {id} = req.params
+    const intId = parseInt(id)
+    const filteredUsers = users.filter(user => user.id !== intId)
+    if (filteredUsers.length === users.length) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+    await fs.writeFile('users.json', JSON.stringify(filteredUsers, null, 2))
+    res.send(filteredUsers)
+})
+
+
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });
